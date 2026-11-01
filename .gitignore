@@ -1,0 +1,12 @@
+# Object files
+*.o
+
+# Final executable
+os
+
+# Submission archives
+*.zip
+assignment_*.zip
+
+# Log or crash files
+*.log
