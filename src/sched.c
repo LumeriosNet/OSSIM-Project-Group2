@@ -58,20 +58,26 @@ void init_scheduler(void) {
  */
 struct pcb_t * get_mlq_proc(void) {
 	struct pcb_t * proc = NULL;
-	static int prio = 0;
 
 	pthread_mutex_lock(&queue_lock);
-	/* A second pass allows a new round when the remaining queues are empty. */
-	for (int checked = 0; checked < 2 * MAX_PRIO; checked++) {
-		if (slot[prio] > 0 && !empty(&mlq_ready_queue[prio])) {
-			proc = dequeue(&mlq_ready_queue[prio]);
-			slot[prio]--;
-			break;
+	for (int round = 0; round < 2 && proc == NULL; round++) {
+		int has_process = 0;
+		for (int prio = 0; prio < MAX_PRIO; prio++) {
+			if (empty(&mlq_ready_queue[prio]))
+				continue;
+			has_process = 1;
+			if (slot[prio] > 0) {
+				proc = dequeue(&mlq_ready_queue[prio]);
+				slot[prio]--;
+				break;
+			}
 		}
 
-		/* Prepare this queue for its next round, then visit the next queue. */
-		slot[prio] = MAX_PRIO - prio;
-		prio = (prio + 1) % MAX_PRIO;
+		if (proc != NULL || !has_process)
+			break;
+
+		for (int prio = 0; prio < MAX_PRIO; prio++)
+			slot[prio] = MAX_PRIO - prio;
 	}
 
 	if (proc != NULL)
