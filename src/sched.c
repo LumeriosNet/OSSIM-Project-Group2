@@ -58,43 +58,47 @@ void init_scheduler(void) {
  */
 struct pcb_t * get_mlq_proc(void) {
 	struct pcb_t * proc = NULL;
+	static int prio = 0;
 
 	pthread_mutex_lock(&queue_lock);
-	/*TODO: get a process from PRIORITY [ready_queue].
-	 *      It worth to protect by a mechanism.
-	 * */
+	/* A second pass allows a new round when the remaining queues are empty. */
+	for (int checked = 0; checked < 2 * MAX_PRIO; checked++) {
+		if (slot[prio] > 0 && !empty(&mlq_ready_queue[prio])) {
+			proc = dequeue(&mlq_ready_queue[prio]);
+			slot[prio]--;
+			break;
+		}
+
+		/* Prepare this queue for its next round, then visit the next queue. */
+		slot[prio] = MAX_PRIO - prio;
+		prio = (prio + 1) % MAX_PRIO;
+	}
 
 	if (proc != NULL)
 		enqueue(&running_list, proc);
+	pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
 
 void put_mlq_proc(struct pcb_t * proc) {
+	pthread_mutex_lock(&queue_lock);
+
 	proc->krnl->ready_queue = &ready_queue;
 	proc->krnl->mlq_ready_queue = mlq_ready_queue;
 	proc->krnl->running_list = &running_list;
 
-	/* TODO: put running proc to running_list 
-	 *       It worth to protect by a mechanism.
-	 * 
-	 */
-
-	pthread_mutex_lock(&queue_lock);
+	purgequeue(&running_list, proc);
 	enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);
 }
 
 void add_mlq_proc(struct pcb_t * proc) {
+	pthread_mutex_lock(&queue_lock);
+
 	proc->krnl->ready_queue = &ready_queue;
 	proc->krnl->mlq_ready_queue = mlq_ready_queue;
 	proc->krnl->running_list = &running_list;
 
-	/* TODO: put running proc to running_list
-	 *       It worth to protect by a mechanism.
-	 * 
-	 */
-       
-	pthread_mutex_lock(&queue_lock);
 	enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);	
 }
