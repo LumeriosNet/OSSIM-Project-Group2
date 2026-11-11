@@ -35,12 +35,11 @@
 #include "Vdma_top.h"
 #include "Vdma_top__Dpi.h"  
 
-#if DMA_MAIN == 1
 extern "C" {
 #include "common.h"
 #include "os-mm.h"
+#include "dma.h"
 }
-#endif
 
 // RTL Direct Test - Drive Verilator RTL directly
 extern "C" int dpi_rtl_dma_copy(uint64_t src_offset, uint64_t dst_offset, uint64_t length);
@@ -55,19 +54,25 @@ extern "C" int dpi_rtl_dma_is_available(void);
 int dpi_dma_copy(struct pcb_t *caller, uint64_t src_offset, uint64_t dst_offset, uint64_t length) {
     void *src = NULL;
     void *dst = NULL;
-    //struct krnl_t *krnl = caller->krnl;
 
-    if (memory_bank_is_available()) {
-        printf("dma_testbench modeo with dpi_dma_copy from memory bank\n");
+    if (caller != NULL && caller->krnl != NULL && caller->krnl->mram != NULL && caller->krnl->mram->storage != NULL) {
+        struct memphy_struct *mram = caller->krnl->mram;
+        if (src_offset + length > (uint64_t)mram->maxsz || dst_offset + length > (uint64_t)mram->maxsz) {
+            printf("[DMA] ERROR: Transfer exceeds physical RAM bounds (maxsz=%d)\n", mram->maxsz);
+            return -1;
+        }
+        src = (void *)(mram->storage + src_offset);
+        dst = (void *)(mram->storage + dst_offset);
+        sysbus_set_mram(mram);
+    } else if (memory_bank_is_available()) {
+        printf("dma_testbench mode with dpi_dma_copy from memory bank\n");
         src = memory_bank_get_ptr(src_offset);
         dst = memory_bank_get_ptr(dst_offset);
-    } else {
-        /*
-         * TODO: map system OS memory address
-         */
-        //printf("dma_testbench modeo with OS memory address\n");
-        //src =  krnl->...
-        //dst =  krnl->...
+    }
+
+    if (src == NULL || dst == NULL) {
+        printf("[DMA] ERROR: Unresolved memory pointers (src=%p, dst=%p)\n", src, dst);
+        return -1;
     }
 
     printf("dpi_dma_copy: src=%llu, dst=%llu, len=%llu\n", 
@@ -75,6 +80,7 @@ int dpi_dma_copy(struct pcb_t *caller, uint64_t src_offset, uint64_t dst_offset,
 		    (unsigned long long) dst_offset,
 		    (unsigned long long) length);
 
+#if DMA_MAIN == 1
     uint8_t* psrc = (uint8_t*)src;
     uint64_t pattern_length = (length <= 255) ? length : 255;
     
@@ -82,6 +88,7 @@ int dpi_dma_copy(struct pcb_t *caller, uint64_t src_offset, uint64_t dst_offset,
         // Pattern cycles through 0x01 to min(length, 255)
         psrc[i] = (uint8_t)((i % pattern_length) + 1);
     }
+#endif
 
     printf("Before copy:\n");
     printf("  src[0] = 0x%02x, src[1] = 0x%02x\n"
@@ -101,10 +108,14 @@ int dpi_dma_copy(struct pcb_t *caller, uint64_t src_offset, uint64_t dst_offset,
            ((uint8_t*)dst)[4], ((uint8_t*)dst)[5],
            ((uint8_t*)dst)[6], ((uint8_t*)dst)[7]);
 
-    printf("\nCalling RTL DMA...\n");
-    
-    // Call the RTL DMA function directly with provided parameters
-    int result = dpi_rtl_dma_copy(src_offset, dst_offset, length);
+    int result = 0;
+    if (dpi_rtl_dma_is_available()) {
+        printf("\nCalling RTL DMA...\n");
+        result = dpi_rtl_dma_copy(src_offset, dst_offset, length);
+    } else {
+        memmove(dst, src, (size_t)length);
+        dma_done_callback();
+    }
     
     printf("\nAfter copy:\n");
     printf("  src[0] = 0x%02x, src[1] = 0x%02x\n"

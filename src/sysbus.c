@@ -14,7 +14,14 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "os-mm.h"
 #include "sysbus.h"
+
+static struct memphy_struct *s_active_mram = NULL;
+
+void sysbus_set_mram(struct memphy_struct *mram) {
+    s_active_mram = mram;
+}
 
 // Maximum number of memory banks supported
 #define MAX_MEMORY_BANKS 8
@@ -117,27 +124,38 @@ extern "C" {
  */
 int dpi_bank_read32_legacy(long long offset) {
     uint8_t data[4] = {0};
+    void* src = NULL;
 
-    void* src = memory_bank_get_ptr((size_t)offset);
+    if (s_active_mram != NULL && s_active_mram->storage != NULL) {
+        if ((size_t)offset + 4 <= (size_t)s_active_mram->maxsz)
+            src = (void*)(s_active_mram->storage + offset);
+    } else {
+        src = memory_bank_get_ptr((size_t)offset);
+    }
 
-    //printf("MEM READ RESULT: Address=%p, DPI return=%x, Readback=%x, Match=%d\n",
-    //        (void*)((size_t)offset), *(unsigned int*)data, *(unsigned int*)data, 1);
-    //fflush(stdout);
-    
-    memcpy(&data, src, 4);
+    if (src != NULL) {
+        memcpy(&data, src, 4);
+    }
 
-    return  *((uint32_t*)data);
+    return *((uint32_t*)data);
 }
 
 /**
  * DPI Callback: Called from RTL when DMA write access
  */
 int dpi_bank_write32_legacy(long long offset, int value) {
-    void* dst = memory_bank_get_ptr((size_t)offset);
-    //printf("MEM WRITE RESULT: Address=%p, Write data=%x, Write rc=0, Readback=%x, Match=1\n",
-    //        (void*)((size_t)offset), *(unsigned int*)&value, *(unsigned int*)&value);
-    memcpy(dst,  &value, 4);
-    //fflush(stdout);
+    void* dst = NULL;
+
+    if (s_active_mram != NULL && s_active_mram->storage != NULL) {
+        if ((size_t)offset + 4 <= (size_t)s_active_mram->maxsz)
+            dst = (void*)(s_active_mram->storage + offset);
+    } else {
+        dst = memory_bank_get_ptr((size_t)offset);
+    }
+
+    if (dst != NULL) {
+        memcpy(dst, &value, 4);
+    }
        
     return 0;
 }

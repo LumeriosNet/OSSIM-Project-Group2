@@ -43,6 +43,9 @@ size_t memory_bank_get_size(void);
 // Check if memory bank is initialized
 int memory_bank_is_available(void);
 
+struct memphy_struct;
+void sysbus_set_mram(struct memphy_struct *mram);
+
 // DPI Callback: Called from RTL when DMA read access
 int dpi_bank_read32_legacy(long long offset);
 

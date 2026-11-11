@@ -27,6 +27,11 @@ CXXFLAGS = -std=gnu++14 -c $(DEBUG)
 
 # Verilator configuration
 VERILATOR_ROOT ?= /usr/share/verilator
+ifeq ($(wildcard $(VERILATOR_ROOT)/include/verilated.h),)
+    ifneq ($(wildcard $(HOME)/.local/share/verilator/include/verilated.h),)
+        VERILATOR_ROOT := $(HOME)/.local/share/verilator
+    endif
+endif
 ifeq ($(shell uname -s),Darwin)
     ifeq ($(shell uname -m),arm64)
         CFLAGS = -Wall -c $(DEBUG)

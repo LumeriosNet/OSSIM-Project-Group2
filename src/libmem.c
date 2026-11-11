@@ -466,19 +466,26 @@ addr_t __kmalloc(struct pcb_t *caller, int vmaid, int rgid, addr_t size, addr_t 
  */
 int libmem_dma_memcpy(struct pcb_t *caller, uint32_t src, uint32_t dst, uint32_t offset, uint32_t size)
 {
-  /* TODO: provide DMA mempy */
+  if (caller == NULL)
+    return -1;
 
-  //struct krnl_t *krnl = caller->krnl;
+  if (size == 0)
+    return 0;
 
-  /*
-   *  TODO: provide asynchronous dma memcpy
-   *        handling the dma_done_callback
-   */
-  //do_dma(caller, (uint64_t) src, (uint64_t) dst, (uint64_t) size);
-  //krnl->...
-  //krnl->...
+  uint64_t src_addr = (uint64_t)src + offset;
+  uint64_t dst_addr = (uint64_t)dst + offset;
 
-  return 0;
+  /* Check region translation if symbols exist in symrgtbl */
+  if (caller->mm != NULL) {
+    if (src < PAGING_MAX_SYMTBL_SZ && caller->mm->symrgtbl[src].rg_start != 0) {
+      src_addr = caller->mm->symrgtbl[src].rg_start + offset;
+    }
+    if (dst < PAGING_MAX_SYMTBL_SZ && caller->mm->symrgtbl[dst].rg_start != 0) {
+      dst_addr = caller->mm->symrgtbl[dst].rg_start + offset;
+    }
+  }
+
+  return do_dma(caller, src_addr, dst_addr, (uint64_t)size);
 }
 
 
