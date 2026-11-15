@@ -29,17 +29,17 @@ struct vm_area_struct *get_vma_by_num(struct mm_struct *mm, int vmaid)
 {
   struct vm_area_struct *pvma = mm->mmap;
 
-  if (mm->mmap == NULL)
+  if (mm->mmap == NULL || vmaid < 0)
     return NULL;
 
-  int vmait = pvma->vm_id;
+  unsigned long vmait = pvma->vm_id;
 
-  while (vmait < vmaid)
+  while (vmait != (unsigned long)vmaid)
   {
+    pvma = pvma->vm_next;
     if (pvma == NULL)
       return NULL;
 
-    pvma = pvma->vm_next;
     vmait = pvma->vm_id;
   }
 
