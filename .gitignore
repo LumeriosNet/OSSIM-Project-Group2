@@ -10,3 +10,11 @@ assignment_*.zip
 
 # Log or crash files
 *.log
+
+# LaTeX auxiliary files
+*.aux
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz

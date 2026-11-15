@@ -1,0 +1,180 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T5,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{vntex}
+\usepackage[english]{babel}
+\usepackage[a4paper,margin=2.25cm,headheight=40pt,footskip=28pt]{geometry}
+\usepackage{lmodern}
+\usepackage{graphicx,xcolor}
+\usepackage{booktabs,tabularx,longtable,array,multirow}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{fancyhdr,lastpage}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{comment}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{titlesec}
+
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=black,citecolor=black,pdftitle={Simple Operating System},pdfauthor={Group 2}}
+\definecolor{ink}{HTML}{000000}
+\definecolor{accent}{HTML}{000000}
+\definecolor{pale}{HTML}{FFFFFF}
+\definecolor{muted}{HTML}{000000}
+\definecolor{placeholderblue}{HTML}{005B9D}
+\setlength{\parindent}{1.1em}
+\setlength{\parskip}{0.24em}
+\setcounter{tocdepth}{2}
+\setlist[itemize]{leftmargin=1.5em,itemsep=0.13em,topsep=0.3em}
+\setlist[enumerate]{leftmargin=1.7em,itemsep=0.12em,topsep=0.3em}
+\renewcommand{\arraystretch}{1.15}
+\titleformat{\section}{\Large\bfseries\color{ink}}{\thesection.}{0.65em}{}
+\titleformat{\subsection}{\large\bfseries\color{accent}}{\thesubsection}{0.65em}{}
+\captionsetup{font=small,labelfont=bf}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\includegraphics[height=0.43cm]{hcmut.png}\hspace{0.2cm}\footnotesize\textbf{HCMUT -- Faculty of Computer Science and Engineering}}
+\fancyfoot[L]{\footnotesize Operating Systems (CO2018) | Assignment: Simple Operating System}
+\fancyfoot[R]{\footnotesize Page \thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+\lstdefinestyle{command}{basicstyle=\ttfamily\footnotesize,frame=single,backgroundcolor=\color{white},breaklines=true,columns=fullflexible,keepspaces=true,showstringspaces=false}
+\lstset{style=command}
+\newcommand{\code}[1]{{\ttfamily\detokenize{#1}}}
+\newcommand{\statusnote}[1]{\par\noindent\begingroup\setlength{\fboxsep}{8pt}\colorbox{pale}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{\small #1}}\endgroup\par}
+
+\begin{document}
+
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+\centering
+{\large VIETNAM NATIONAL UNIVERSITY -- HO CHI MINH CITY\par}
+\vspace{0.25cm}
+{\Large\bfseries HO CHI MINH CITY UNIVERSITY OF TECHNOLOGY\par}
+{\large Faculty of Computer Science and Engineering\par}
+\vspace{1.4cm}
+\includegraphics[width=3.3cm]{hcmut.png}\par
+\vspace{1.15cm}
+{\Large\bfseries OPERATING SYSTEMS (CO2018)\par}
+\vspace{0.65cm}
+\textcolor{accent}{\rule{0.9\linewidth}{1.2pt}}\par
+\vspace{0.4cm}
+{\Huge\bfseries\color{ink} Simple Operating System\par}
+\vspace{0.45cm}
+{\Large Assignment Report\par}
+\vspace{0.4cm}
+\textcolor{accent}{\rule{0.9\linewidth}{1.2pt}}\par
+\vspace{1.2cm}
+\begin{tabular}{rl}
+\textbf{Course:} & Operating Systems (CO2018)\\
+\textbf{Assignment:} & Simple Operating System\\
+\end{tabular}
+\vspace{0.72cm}
+
+{\large\bfseries Team Members\par}
+\vspace{0.20cm}
+{\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}c p{6.5cm} p{2.8cm} c@{}}
+\toprule
+\textbf{No.} & \textbf{Full Name} & \textbf{Student ID} & \textbf{Role}\\
+\midrule
+1 & Nguyễn Trần Lan Châu & 2452164 & P1\\
+2 & Phạm Trương Hoàng Long & 2452700 & P2\\
+3 & Nguyễn Việt Tùng & 2453391 & P3\\
+4 & Belda Jérémie Philippe & 2660010 & P4\\
+5 & Morel Pierre Louis & 2660035 & P5\\
+6 & Lê Minh Hưng & 2252277 & P6\\
+\bottomrule
+\end{tabular}
+}
+\vfill
+{Ho Chi Minh City, November 2026\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+\hypersetup{pageanchor=true}
+
+\section{Scheduler \& Synchronization (P1 - Lan Châu)}
+\subsection{MLQ Scheduling Implementation}
+% TODO: Lan Châu
+
+\subsection{CPU Execution Gantt Diagram}
+% TODO: Lan Châu
+
+\subsection{Synchronization \& Shared Resources Protection}
+% TODO: Lan Châu
+
+\section{Memory Management: Virtual \& Physical Memory (P2 - Hoàng Long)}
+\subsection{Virtual Memory Areas \& Regions Allocation}
+% TODO: Hoàng Long
+
+\subsection{Physical Memory (RAM/SWAP) \& Page Swapping}
+% TODO: Hoàng Long
+
+\subsection{Memory Allocation Status in Data Segments}
+% TODO: Hoàng Long
+
+\section{Kernel Interface, System Calls \& Isolation (P3 - Việt Tùng)}
+\subsection{System Call Implementation \& Dispatch}
+% TODO: Việt Tùng
+
+\subsection{User/Kernel Space Isolation (PID Passing \& Mode Bit)}
+% TODO: Việt Tùng
+
+\section{64-Bit Multi-Level Paging (P4 - Philippe Belda)}
+\subsection{5-Level Hierarchical Paging Translation Scheme}
+% TODO: Philippe
+
+\subsection{Memory Accesses \& Page Table Storage Statistics}
+% TODO: Philippe
+
+\section{Co-Processor \& DMA Subsystem (P5 - Louis Morel \& P6 - Minh Hưng)}
+\subsection{CPU MMU Access vs. DMA Direct Bus Addressing (P5)}
+% TODO: Louis
+
+\subsection{Asynchronous DMA Execution \& Interrupt Workflow (P5/P6)}
+% TODO: Louis / Minh Hưng
+
+\subsection{Verilator Hardware Pinout \& Byte-by-Byte Endianness (P6)}
+% TODO: Minh Hưng
+
+\section{Simulation Results \& Overall Interpretation (P6 - Minh Hưng)}
+% TODO: Minh Hưng
+
+\section{Official Assignment Questions}
+\subsection{Question 1 (p. 9 - Unified System Call Interface — P3)}
+What are the advantages and disadvantages of using the unified system call interface for manipulating different system components, i.e. read/write/free for files, memory and I/O devices. In your analysis, consider how this abstraction influences operating system design, performance trade-offs, error handling complexity, and the balance between portability and efficiency.
+\par\noindent\textit{[TODO: Answer here]}
+
+\subsection{Question 2 (p. 11 - Long-Running System Call — P3)}
+When a system call executes too long time, how does the Operating system detect and handle the case?
+\par\noindent\textit{[TODO: Answer here]}
+
+\subsection{Question 3 (p. 13 - MLQ Detailed Policies — P1)}
+Considering the impactness of MLQ detailed policies, what is the benefit of each policy?
+\par\noindent\textit{[TODO: Answer here]}
+
+\subsection{Question 4 (p. 17 - Combining Segmentation with Paging — P2)}
+What is the primary motivation for combining segmentation with paging in memory management? How does this hybrid approach address limitations inherent in using either technique alone?
+\par\noindent\textit{[TODO: Answer here]}
+
+\subsection{Question 5 (p. 18 - N-Level Hierarchical Paging — P4)}
+What are the benefits of extending hierarchical paging to N level?
+\par\noindent\textit{[TODO: Answer here]}
+
+\subsection{Question 6 (p. 19 - Paging vs. Contiguous Allocation — P2)}
+What are the advantages and disadvantages of paging and contiguous memory allocation?
+\par\noindent\textit{[TODO: Answer here]}
+
+\subsection{Question 7 (p. 25 - Synchronization Absence — P1)}
+What happens if the synchronization is not handled in your Simple OS? Illustrate the problem of your simple OS (assignment outputs) by example if you have any in the added kernel memory operations.
+\par\noindent\textit{[TODO: Answer here]}
+
+\end{document}
