@@ -60,42 +60,54 @@ struct pcb_t * get_mlq_proc(void) {
 	struct pcb_t * proc = NULL;
 
 	pthread_mutex_lock(&queue_lock);
-	/*TODO: get a process from PRIORITY [ready_queue].
-	 *      It worth to protect by a mechanism.
-	 * */
+	for (int round = 0; round < 2 && proc == NULL; round++) {
+		int has_process = 0;
+		for (int prio = 0; prio < MAX_PRIO; prio++) {
+			if (empty(&mlq_ready_queue[prio]))
+				continue;
+			has_process = 1;
+			if (slot[prio] > 0) {
+				proc = dequeue(&mlq_ready_queue[prio]);
+				slot[prio]--;
+				break;
+			}
+		}
+
+		if (proc != NULL || !has_process)
+			break;
+
+		for (int prio = 0; prio < MAX_PRIO; prio++)
+			slot[prio] = MAX_PRIO - prio;
+	}
 
 	if (proc != NULL)
 		enqueue(&running_list, proc);
+	pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
 
 void put_mlq_proc(struct pcb_t * proc) {
+	pthread_mutex_lock(&queue_lock);
+
 	proc->krnl->ready_queue = &ready_queue;
 	proc->krnl->mlq_ready_queue = mlq_ready_queue;
 	proc->krnl->running_list = &running_list;
 
-	/* TODO: put running proc to running_list 
-	 *       It worth to protect by a mechanism.
-	 * 
-	 */
-
-	pthread_mutex_lock(&queue_lock);
-	enqueue(&mlq_ready_queue[proc->prio], proc);
+	purgequeue(&running_list, proc);
+	if (proc->prio < MAX_PRIO)
+		enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);
 }
 
 void add_mlq_proc(struct pcb_t * proc) {
+	pthread_mutex_lock(&queue_lock);
+
 	proc->krnl->ready_queue = &ready_queue;
 	proc->krnl->mlq_ready_queue = mlq_ready_queue;
 	proc->krnl->running_list = &running_list;
 
-	/* TODO: put running proc to running_list
-	 *       It worth to protect by a mechanism.
-	 * 
-	 */
-       
-	pthread_mutex_lock(&queue_lock);
-	enqueue(&mlq_ready_queue[proc->prio], proc);
+	if (proc->prio < MAX_PRIO)
+		enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);	
 }
 
