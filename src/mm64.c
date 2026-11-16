@@ -145,24 +145,10 @@ int pte_set_swap(struct pcb_t *caller, addr_t pgn, int swptyp, addr_t swpoff) {
   struct krnl_t *krnl = caller->krnl;
 
   addr_t *pte;
-  addr_t pgd = 0;
-  addr_t p4d = 0;
-  addr_t pud = 0;
-  addr_t pmd = 0;
-  addr_t pt = 0;
-
-  // dummy pte alloc to avoid runtime error
-  // pte = malloc(sizeof(addr_t));
 #ifdef MM64
-  /* Get value from the system */
-  /* TODO Perform multi-level page mapping */
-  // get_pd_from_pagenum(pgn, &pgd, &p4d, &pud, &pmd, &pt);
-  pte = pt_walk(krnl->mm, pgn, 1);
-  //... krnl->mm->pgd
-  //... krnl->mm->pt
-  // pte = &krnl->mm->pt;
+  pte = pt_walk(caller->mm, pgn, 1);
 #else
-  pte = &krnl->mm->pgd[pgn];
+  pte = &caller->mm->pgd[pgn];
 #endif
   if (pte == NULL) {
     return 1;
