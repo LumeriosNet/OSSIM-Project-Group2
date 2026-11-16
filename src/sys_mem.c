@@ -14,7 +14,7 @@
 #include "queue.h"
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <pthread.h>
 #ifdef MM64
 #include "mm64.h"
 #else
@@ -22,6 +22,7 @@
 #endif
 
 //typedef char BYTE;
+static pthread_mutex_t sysmem_lock = PTHREAD_MUTEX_INITIALIZER;
 
 int
 __sys_memmap (struct krnl_t *krnl, uint32_t pid, struct sc_regs *regs)
@@ -47,19 +48,20 @@ __sys_memmap (struct krnl_t *krnl, uint32_t pid, struct sc_regs *regs)
   /* TODO: Traverse proclist to terminate the proc
    *       stcmp to check the process match proc_name
    */
+  pthread_mutex_lock (&sysmem_lock);
   running_list = krnl->running_list;
   if (running_list != NULL)
-    {
-      for (i = 0; i < running_list->size; i++)
-	{
-	  if (running_list->proc[i] != NULL
-	      && running_list->proc[i]->pid == pid)
+  {
+    for (i = 0; i < running_list->size; i++)
+	  {
+	    if (running_list->proc[i] != NULL && running_list->proc[i]->pid == pid)
 	    {
 	      caller = running_list->proc[i];
 	      break;
 	    }
-	}
-    }
+	  }
+  }
+  pthread_mutex_unlock (&sysmem_lock);
 
   if (caller == NULL)
     return -1;
