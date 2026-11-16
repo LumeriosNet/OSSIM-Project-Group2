@@ -528,7 +528,9 @@ printf("%s:%d\n",__func__,__LINE__);
  */
 int __write(struct pcb_t *caller, int vmaid, int rgid, addr_t offset, BYTE value)
 {
-    struct vm_rg_struct *currg = get_symrg_byid(caller->mm, rgid);
+  pthread_mutex_lock(&mmvm_lock);
+
+  struct vm_rg_struct *currg = get_symrg_byid(caller->mm, rgid);
 
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
 

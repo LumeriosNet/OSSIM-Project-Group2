@@ -73,7 +73,7 @@ struct vm_rg_struct *get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, ad
   // newrg->rg_end = ...
   */
   // struct vm_area_struct *cur_vma=....
-    struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
   if (cur_vma == NULL || alignedsz == 0 ||
       alignedsz > (addr_t)-1 - cur_vma->sbrk)
     return NULL;
