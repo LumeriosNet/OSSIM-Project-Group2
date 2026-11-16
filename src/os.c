@@ -32,6 +32,7 @@
 static int time_slot;
 static int num_cpus;
 static int done = 0;
+static int os_done = 0;
 
 /* --- DMA Mailbox --- */
 pthread_mutex_t dma_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -141,8 +142,7 @@ static void *co_processor(void *arg) {
     return (void *)1;
   }
   /* async co-proc loop */
-  while (
-      !done) { // 'done' is the global var turning to 1 when OS is shutting down
+  while (!os_done || dma_pending) {
     pthread_mutex_lock(&dma_lock);
     if (dma_pending) {
       do_dma(dma_caller, dma_src, dma_dst, dma_size); // exec DMA
@@ -341,6 +341,10 @@ int main(int argc, char *argv[]) {
     pthread_join(cpu[i], NULL);
   }
   pthread_join(ld, NULL);
+
+  os_done = 1;
+  pthread_join(*dma, NULL);
+  free(dma);
 
   /* Stop timer */
   stop_timer();
