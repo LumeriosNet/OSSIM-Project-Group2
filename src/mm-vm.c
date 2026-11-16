@@ -161,12 +161,22 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, addr_t inc_sz)
   addr_t new_sbrk = cur_vma->sbrk + inc_sz;
   if (new_sbrk > cur_vma->vm_end)
   {
-    const addr_t pagesz = PAGING64_PAGESZ;
+    #ifdef MM64
+      const addr_t pagesz = PAGING64_PAGESZ;
+    #else
+      const addr_t pagesz = PAGING_PAGESZ;
+    #endif
+
     if (new_sbrk > (addr_t)-1 - (pagesz - 1) ||
         cur_vma->vm_end % pagesz != 0)
       return -1;
 
-    addr_t new_end = PAGING64_PAGE_ALIGNSZ(new_sbrk);
+    #ifdef MM64
+      addr_t new_end = PAGING64_PAGE_ALIGNSZ(new_sbrk);
+    #else
+      addr_t new_end = PAGING_PAGE_ALIGNSZ(new_sbrk);
+    #endif
+
     addr_t incpgnum = (new_end - cur_vma->vm_end) / pagesz;
     if (incpgnum > INT_MAX ||
         validate_overlap_vm_area(caller, vmaid, cur_vma->vm_start, new_end) != 0)
