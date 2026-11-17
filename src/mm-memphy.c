@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor
@@ -48,7 +49,7 @@ int MEMPHY_mv_csr(struct memphy_struct *mp, addr_t offset)
  */
 int MEMPHY_seq_read(struct memphy_struct *mp, addr_t addr, BYTE *value)
 {
-   if (mp == NULL)
+   if (mp == NULL || value == NULL || addr >= (addr_t)mp->maxsz)
       return -1;
 
    if (!mp->rdmflg)
@@ -68,7 +69,7 @@ int MEMPHY_seq_read(struct memphy_struct *mp, addr_t addr, BYTE *value)
  */
 int MEMPHY_read(struct memphy_struct *mp, addr_t addr, BYTE *value)
 {
-   if (mp == NULL)
+   if (mp == NULL || value == NULL || addr >= (addr_t)mp->maxsz)
       return -1;
 
    if (mp->rdmflg)
@@ -88,7 +89,7 @@ int MEMPHY_read(struct memphy_struct *mp, addr_t addr, BYTE *value)
 int MEMPHY_seq_write(struct memphy_struct *mp, addr_t addr, BYTE value)
 {
 
-   if (mp == NULL)
+   if (mp == NULL || addr >= (addr_t)mp->maxsz)
       return -1;
 
    if (!mp->rdmflg)
@@ -108,7 +109,7 @@ int MEMPHY_seq_write(struct memphy_struct *mp, addr_t addr, BYTE value)
  */
 int MEMPHY_write(struct memphy_struct *mp, addr_t addr, BYTE data)
 {
-   if (mp == NULL)
+   if (mp == NULL || addr >= (addr_t)mp->maxsz)
       return -1;
 
    if (mp->rdmflg)
@@ -135,15 +136,24 @@ int MEMPHY_format(struct memphy_struct *mp, int pagesz)
 
    /* Init head of free framephy list */
    fst = malloc(sizeof(struct framephy_struct));
+   if (fst == NULL)
+      return -1;
+
    fst->fpn = iter;
+   fst->fp_next = NULL;
+   fst->owner = NULL;
    mp->free_fp_list = fst;
 
    /* We have list with first element, fill in the rest num-1 element member*/
    for (iter = 1; iter < numfp; iter++)
    {
       newfst = malloc(sizeof(struct framephy_struct));
+      if (newfst == NULL)
+         return -1;
+
       newfst->fpn = iter;
       newfst->fp_next = NULL;
+      newfst->owner = NULL;
       fst->fp_next = newfst;
       fst = newfst;
    }
@@ -168,7 +178,10 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, addr_t *retfpn)
     * TODO MEMPHY is iteratively used up until its exhausted
     * No garbage collector acting then it not been released
     */
-   free(fp);
+   *retfpn = fp->fpn;
+   mp->free_fp_list = fp->fp_next;
+   fp->fp_next = mp->used_fp_list;
+   mp->used_fp_list = fp;
 
    return 0;
 }
@@ -179,19 +192,40 @@ int MEMPHY_dump(struct memphy_struct *mp)
    * TODO dump memphy contnt mp->storage
    *     for tracing the memory content
    */
+   if (mp == NULL)
+      return -1;
 
+   for (int addr = 0; addr < mp->maxsz; addr++)
+   {
+      unsigned int value = (unsigned char)mp->storage[addr];
+      if (value != 0)
+         printf("MEMPHY[%d] = %u\n", addr, value);
+   }
    return 0;
 }
 
 int MEMPHY_put_freefp(struct memphy_struct *mp, addr_t fpn)
 {
-   struct framephy_struct *fp = mp->free_fp_list;
-   struct framephy_struct *newnode = malloc(sizeof(struct framephy_struct));
+      struct framephy_struct *fp = mp->used_fp_list;
+   struct framephy_struct *prev = NULL;
 
-   /* Create new node with value fpn */
-   newnode->fpn = fpn;
-   newnode->fp_next = fp;
-   mp->free_fp_list = newnode;
+   while (fp != NULL && fp->fpn != fpn)
+   {
+      prev = fp;
+      fp = fp->fp_next;
+   }
+
+   if (fp == NULL)
+      return -1;
+
+   if (prev == NULL)
+      mp->used_fp_list = fp->fp_next;
+   else
+      prev->fp_next = fp->fp_next;
+
+   fp->owner = NULL;
+   fp->fp_next = mp->free_fp_list;
+   mp->free_fp_list = fp;
 
    return 0;
 }
@@ -201,6 +235,8 @@ int MEMPHY_put_freefp(struct memphy_struct *mp, addr_t fpn)
  */
 int init_memphy(struct memphy_struct *mp, addr_t max_size, int randomflg)
 {
+   mp->free_fp_list = NULL;
+   mp->used_fp_list = NULL;
    mp->storage = (BYTE *)malloc(max_size * sizeof(BYTE));
    mp->maxsz = max_size;
    memset(mp->storage, 0, max_size * sizeof(BYTE));

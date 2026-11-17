@@ -463,6 +463,8 @@ int enlist_pgn_node(struct pgn_t **plist, addr_t pgn)
 {
   struct pgn_t *pnode = malloc(sizeof(struct pgn_t));
 
+  if (pnode == NULL)
+    return -1;
   pnode->pgn = pgn;
   pnode->pg_next = *plist;
   *plist = pnode;

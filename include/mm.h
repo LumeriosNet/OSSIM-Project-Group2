@@ -96,11 +96,17 @@ extern "C" {
 #define PAGING_PGN(x)  GETVAL(x,PAGING_PGN_MASK,PAGING_ADDR_PGN_LOBIT)
 /* Extract SWAPTYPE */
 #define PAGING_PTE_SWPTYP(pte)  GETVAL(pte, PAGING_PTE_SWPTYP_MASK, PAGING_PTE_SWPTYP_LOBIT)
+/* Physical address from FPN and offset */
+#define PAGING_ADDR_PHYS(fpn, off) (((addr_t)(fpn) << PAGING_ADDR_FPN_LOBIT) + (off))
 
 /* Memory range operator */
 /* TODO implement the INCLUDE and OVERLAP checking mechanism */
-#define INCLUDE(x1,x2,y1,y2) (0)
-#define OVERLAP(x1,x2,y1,y2) (0)
+#define INCLUDE(x1, x2, y1, y2) \
+   ((x1) <= (y1) && (y1) < (y2) && (y2) <= (x2))
+
+#define OVERLAP(x1, x2, y1, y2) \
+   ((x1) < (x2) && (y1) < (y2) && \
+    (x1) < (y2) && (y1) < (x2))
 
 /* VM region prototypes */
 struct vm_rg_struct * init_vm_rg(addr_t rg_start, addr_t rg_end);

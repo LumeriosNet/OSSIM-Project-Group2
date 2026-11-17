@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
-
+#include <limits.h>
 /*get_vma_by_num - get vm area by numID
  *@mm: memory region
  *@vmaid: ID vm area to alloc memory region
@@ -29,17 +29,17 @@ struct vm_area_struct *get_vma_by_num(struct mm_struct *mm, int vmaid)
 {
   struct vm_area_struct *pvma = mm->mmap;
 
-  if (mm->mmap == NULL)
+  if (mm->mmap == NULL || vmaid < 0)
     return NULL;
 
-  int vmait = pvma->vm_id;
+  unsigned long vmait = pvma->vm_id;
 
-  while (vmait < vmaid)
+  while (vmait != (unsigned long)vmaid)
   {
+    pvma = pvma->vm_next;
     if (pvma == NULL)
       return NULL;
 
-    pvma = pvma->vm_next;
     vmait = pvma->vm_id;
   }
 
@@ -73,7 +73,19 @@ struct vm_rg_struct *get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, ad
   // newrg->rg_end = ...
   */
   // struct vm_area_struct *cur_vma=....
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
+  if (cur_vma == NULL || alignedsz == 0 ||
+      alignedsz > (addr_t)-1 - cur_vma->sbrk)
+    return NULL;
 
+  newrg = malloc(sizeof(struct vm_rg_struct));
+  if (newrg == NULL)
+    return NULL;
+
+  newrg->vmaid = vmaid;
+  newrg->rg_start = cur_vma->sbrk;
+  newrg->rg_end = cur_vma->sbrk + alignedsz;
+  newrg->rg_next = NULL;
   /* END TODO */
 
   return newrg;
@@ -111,7 +123,7 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, addr_t vmastart, a
 
   while (vma != NULL)
   {
-    if (vma != cur_area && OVERLAP(cur_area->vm_start, cur_area->vm_end, vma->vm_start, vma->vm_end))
+    if (vma != cur_area && OVERLAP(vmastart, vmaend, vma->vm_start, vma->vm_end))
     {
       return -1;
     }
@@ -141,7 +153,40 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, addr_t inc_sz)
    */
 
   /* TODO: Obtain the new vm area based on vmaid */
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
+  if (cur_vma == NULL || inc_sz == 0 ||
+      inc_sz > (addr_t)-1 - cur_vma->sbrk)
+    return -1;
 
+  addr_t new_sbrk = cur_vma->sbrk + inc_sz;
+  if (new_sbrk > cur_vma->vm_end)
+  {
+    const addr_t pagesz = PAGING64_PAGESZ;
+    if (new_sbrk > (addr_t)-1 - (pagesz - 1) ||
+        cur_vma->vm_end % pagesz != 0)
+      return -1;
+
+    addr_t new_end = PAGING64_PAGE_ALIGNSZ(new_sbrk);
+    addr_t incpgnum = (new_end - cur_vma->vm_end) / pagesz;
+    if (incpgnum > INT_MAX ||
+        validate_overlap_vm_area(caller, vmaid, cur_vma->vm_start, new_end) != 0)
+      return -1;
+
+    struct vm_rg_struct *area =
+        get_vm_area_node_at_brk(caller, vmaid, new_end - cur_vma->sbrk);
+    if (area == NULL)
+      return -1;
+
+    addr_t ret = vm_map_ram(caller, cur_vma->vm_start, new_end,
+                            cur_vma->vm_end, (int)incpgnum, area);
+    free(area);
+    if (ret != 0)
+      return -1;
+
+    cur_vma->vm_end = new_end;
+  }
+
+  cur_vma->sbrk = new_sbrk;
 
   return 0;
 }
