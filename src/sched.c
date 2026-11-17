@@ -94,6 +94,7 @@ void put_mlq_proc(struct pcb_t * proc) {
 	proc->krnl->running_list = &running_list;
 
 	purgequeue(&running_list, proc);
+	/* Prevent MLQ out-of-bounds */
 	if (proc->prio < MAX_PRIO)
 		enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);
@@ -106,6 +107,7 @@ void add_mlq_proc(struct pcb_t * proc) {
 	proc->krnl->mlq_ready_queue = mlq_ready_queue;
 	proc->krnl->running_list = &running_list;
 
+	/* Prevent MLQ out-of-bounds */
 	if (proc->prio < MAX_PRIO)
 		enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);	

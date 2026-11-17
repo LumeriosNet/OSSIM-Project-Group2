@@ -107,6 +107,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, addr_t size, addr_t *allo
     currg->vmaid = vmaid;
     currg->rg_start = rgnode.rg_start;
     currg->rg_end = rgnode.rg_end;
+    /* Mark region as user-space for isolation */
     currg->mode_bit = 1;
 
     *alloc_addr = rgnode.rg_start;
@@ -136,6 +137,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, addr_t size, addr_t *allo
   currg->vmaid = vmaid;
   currg->rg_start = old_sbrk;
   currg->rg_end = old_sbrk + size;
+  /* Mark region as user-space for isolation */
   currg->mode_bit = 1;
 
   *alloc_addr = old_sbrk;
@@ -325,7 +327,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       if (vicfpn >= (addr_t)ram->maxsz / PAGING_CUR_PAGESZ)
         return -1;
 
-      /* Save the requested page before reusing its SWAP frame. */
+      /* Buffer swap page before reuse */
       BYTE saved_data[PAGING_CUR_PAGESZ];
       struct memphy_struct saved = {
         .storage = saved_data,
@@ -639,7 +641,8 @@ addr_t __kmalloc(struct pcb_t *caller, int vmaid, int rgid, addr_t size, addr_t 
   currg->vmaid = vmaid;
   currg->rg_start = old_sbrk;
   currg->rg_end = old_sbrk + size;
-  currg->mode_bit = 0; /* Kernel mode */
+  /* Mark region as kernel-space for isolation */
+  currg->mode_bit = 0;
 
   krnl->mm->symrgtbl[rgid].vmaid = vmaid;
   krnl->mm->symrgtbl[rgid].rg_start = old_sbrk;
@@ -670,7 +673,7 @@ int libmem_dma_memcpy(struct pcb_t *caller, uint32_t src, uint32_t dst,
   uint64_t src_addr = (uint64_t)src + offset;
   uint64_t dst_addr = (uint64_t)dst + offset;
 
-  /* Check region translation if symbols exist in symrgtbl */
+  /* Translate symbol to virtual addr */
   if (caller->mm != NULL) {
     if (src < PAGING_MAX_SYMTBL_SZ && caller->mm->symrgtbl[src].rg_start != 0) {
       src_addr = caller->mm->symrgtbl[src].rg_start + offset;

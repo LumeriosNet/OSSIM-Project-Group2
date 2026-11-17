@@ -55,6 +55,7 @@ int dpi_dma_copy(struct pcb_t *caller, uint64_t src_offset, uint64_t dst_offset,
     void *src = NULL;
     void *dst = NULL;
 
+    /* Direct transfer on OS physical RAM */
     if (caller != NULL && caller->krnl != NULL && caller->krnl->mram != NULL && caller->krnl->mram->storage != NULL) {
         struct memphy_struct *mram = caller->krnl->mram;
         if (src_offset + length > (uint64_t)mram->maxsz || dst_offset + length > (uint64_t)mram->maxsz) {
@@ -113,6 +114,7 @@ int dpi_dma_copy(struct pcb_t *caller, uint64_t src_offset, uint64_t dst_offset,
         printf("\nCalling RTL DMA...\n");
         result = dpi_rtl_dma_copy(src_offset, dst_offset, length);
     } else {
+        /* Software fallback if RTL unavailable */
         memmove(dst, src, (size_t)length);
         dma_done_callback();
     }

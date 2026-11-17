@@ -126,6 +126,7 @@ int dpi_bank_read32_legacy(long long offset) {
     uint8_t data[4] = {0};
     void* src = NULL;
 
+    /* Direct access to OS physical RAM if mapped */
     if (s_active_mram != NULL && s_active_mram->storage != NULL) {
         if ((size_t)offset + 4 <= (size_t)s_active_mram->maxsz)
             src = (void*)(s_active_mram->storage + offset);
@@ -146,6 +147,7 @@ int dpi_bank_read32_legacy(long long offset) {
 int dpi_bank_write32_legacy(long long offset, int value) {
     void* dst = NULL;
 
+    /* Direct access to OS physical RAM if mapped */
     if (s_active_mram != NULL && s_active_mram->storage != NULL) {
         if ((size_t)offset + 4 <= (size_t)s_active_mram->maxsz)
             dst = (void*)(s_active_mram->storage + offset);

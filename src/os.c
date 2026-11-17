@@ -47,6 +47,7 @@ void submit_dma_request(struct pcb_t *caller, uint64_t src, uint64_t dst,
   dma_src = src;
   dma_dst = dst;
   dma_size = size;
+  /* Async DMA mailbox flag */
   dma_pending = 1;
   pthread_mutex_unlock(&dma_lock);
 }
@@ -145,11 +146,11 @@ static void *co_processor(void *arg) {
   while (!os_done || dma_pending) {
     pthread_mutex_lock(&dma_lock);
     if (dma_pending) {
-      do_dma(dma_caller, dma_src, dma_dst, dma_size); // exec DMA
-      dma_pending = 0; // clear dma_pending (the mailbox)
+      do_dma(dma_caller, dma_src, dma_dst, dma_size);
+      dma_pending = 0; /* Clear mailbox */
     }
     pthread_mutex_unlock(&dma_lock);
-    usleep(1000); // sleep 1ms to not burn 100% of host CPU
+    usleep(1000); /* Yield CPU */
   }
   return NULL;
 }

@@ -48,6 +48,7 @@ __sys_memmap (struct krnl_t *krnl, uint32_t pid, struct sc_regs *regs)
   /* TODO: Traverse proclist to terminate the proc
    *       stcmp to check the process match proc_name
    */
+  /* Reuse queue_lock to protect running_list */
   pthread_mutex_lock (&queue_lock);
   running_list = krnl->running_list;
   if (running_list != NULL)
