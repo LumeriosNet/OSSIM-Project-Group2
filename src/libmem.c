@@ -34,9 +34,10 @@ static pthread_mutex_t kmm_lock = PTHREAD_MUTEX_INITIALIZER;
 #define PAGING_CUR_PAGESZ PAGING_PAGESZ
 #endif
 
-#ifndef PAGING_ADDR_PHYS
-#define PAGING_ADDR_PHYS(fpn, off) (((addr_t)(fpn) << PAGING_ADDR_FPN_LOBIT) + (off))
+#ifdef PAGING_ADDR_PHYS
+#undef PAGING_ADDR_PHYS
 #endif
+#define PAGING_ADDR_PHYS(fpn, off) (((addr_t)(fpn) * PAGING_CUR_PAGESZ) + (off))
 
 /*enlist_vm_freerg_list - add new rg to freerg_list
  *@mm: memory region
@@ -169,7 +170,7 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   /* Manage the collect freed region to freerg_list */
   struct vm_rg_struct *rgnode = get_symrg_byid(caller->mm, rgid);
 
-  if (rgnode == NULL || rgnode->rg_start >= rgnode->rg_end)
+  if (rgnode == NULL || rgnode->rg_start >= rgnode->rg_end || rgnode->mode_bit == 0)
   {
     pthread_mutex_unlock(&mmvm_lock);
     return -1;
@@ -384,8 +385,8 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
  */
 int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
 {
-  addr_t pgn = PAGING_PGN(addr);
-  addr_t off = PAGING_OFFST(addr);
+  addr_t pgn = addr / PAGING_CUR_PAGESZ;
+  addr_t off = addr % PAGING_CUR_PAGESZ;
   int fpn;
 
   if (pg_getpage(mm, (int)pgn, &fpn, caller) != 0)
@@ -414,8 +415,8 @@ int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
  */
 int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
 {
-  addr_t pgn = PAGING_PGN(addr);
-  addr_t off = PAGING_OFFST(addr);
+  addr_t pgn = addr / PAGING_CUR_PAGESZ;
+  addr_t off = addr % PAGING_CUR_PAGESZ;
   int fpn;
 
   /* Get the page to MEMRAM, swap from MEMSWAP if needed */
